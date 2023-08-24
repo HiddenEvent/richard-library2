@@ -1,0 +1,86 @@
+version: "2" # 파일 규격 버전
+services:
+  redis:
+    container_name: local-redis
+    hostname: redis
+    image: redis
+    ports:
+      - "6379:6379"
+    # restart: unless-stopped
+
+  redis-commander:
+    container_name: local-redis-commander
+    hostname: redis-commander
+    image: rediscommander/redis-commander:latest
+    environment:
+      - REDIS_HOSTS=local:redis:6379
+    ports:
+      - "9200:8081"
+    # restart: unless-stopped
+
+  mongodb:
+    container_name: local-mongoDB
+    image: mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: "richardkim"
+      MONGO_INITDB_ROOT_PASSWORD: "flckemzla1!"
+      MONGO_INITDB_DATABASE: "admin"
+    volumes:
+      - ./mongodb:/data/db
+      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    # restart: unless-stopped
+
+  mysql:
+    container_name: local-mysql
+    image: mysql:8.0.23
+    ports:
+      - "3306:3306"
+    environment:
+      TZ: Asia/Seoul
+      MYSQL_ROOT_PASSWORD: "flckemzla1!"
+      MYSQL_USER: "richardkim"
+      MYSQL_PASSWORD: "flckemzla1!"
+      MYSQL_DATABASE: "skuniv"
+    command: # 명령어 실행
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    # restart: unless-stopped
+
+  mariadb:
+    container_name: local-mariaDB
+    image: mariadb
+    ports:
+      - "3307:3306"
+    environment:
+      TZ: Asia/Seoul
+      MYSQL_ROOT_PASSWORD: "flckemzla1!"
+      MYSQL_DATABASE : "hiddenevent"
+      MYSQL_USER: "richardkim"
+      MYSQL_PASSWORD: "flckemzla1!"
+    # restart: unless-stopped
+
+  db:
+    container_name: local-postgres
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: "richardkim"
+      POSTGRES_PASSWORD: "flckemzla1!"
+    volumes:
+      - ./data/postgres/:/var/lib/postgresql/data
+    # restart: unless-stopped
+
+  nexus:
+    image: sonatype/nexus3
+    ports:
+      - "9201:8081"
+    environment:
+      - NEXUS_SECURITY_RANDOMPASSWORD=false  # 초기 비밀번호 랜덤 생성 방지 (선택사항)
+    volumes:
+      - nexus-data:/nexus-data
+
+volumes:
+  nexus-data:

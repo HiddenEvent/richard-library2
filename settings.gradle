@@ -1,2 +1,4 @@
 rootProject.name = 'richard-library'
+include 'nexus-put'
+include 'nexus-get'
 

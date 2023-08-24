@@ -1,19 +1,85 @@
 plugins {
     id 'java'
+    id 'org.springframework.boot' version '3.1.2'
+    id 'io.spring.dependency-management' version '1.1.2'
+    id 'maven-publish'
 }
 
-group 'org.example'
-version '1.0-SNAPSHOT'
 
-repositories {
-    mavenCentral()
+allprojects {
+    apply plugin: 'java'
+    apply plugin: 'org.springframework.boot'
+    apply plugin: 'io.spring.dependency-management'
+    apply plugin: 'maven-publish'
+    group = 'io.richard'
+    version = '0.0.1-SNAPSHOT'
+    sourceCompatibility = '17'
+
+    repositories {
+        mavenCentral()
+        maven {
+            url "https://www.nexus-yoolee.tk/repository/maven-public/"
+            credentials {
+                username project.repoUser
+                password project.repoPassword
+            }
+        }
+    }
+
+    dependencies {
+        implementation 'org.springframework.boot:spring-boot-starter-web'
+        testImplementation 'org.projectlombok:lombok:1.18.22'
+        compileOnly 'org.projectlombok:lombok'
+        annotationProcessor 'org.projectlombok:lombok'
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    }
+
+    tasks.named('test') {
+        useJUnitPlatform()
+    }
 }
 
-dependencies {
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.8.1'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.8.1'
-}
-
-test {
-    useJUnitPlatform()
+project(':nexus-put') {
+    version = '0.0.1-SNAPSHOT'
+    // 실행가능한 app용일때는 bootjar, 라이브러리용일때는 jar 를 사용
+    bootJar {
+        enabled = false
+    }
+    jar {
+        enabled = true
+        archiveClassifier.set('')
+    }
+    artifacts {
+        publishing {
+            repositories {
+                maven {
+                    def releasesRepoUrl = 'http://localhost:8081/repository/maven-releases/'
+                    def snapshotsRepoUrl = 'http://localhost:8081/repository/maven-snapshots/'
+                    url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+                    credentials {
+                        username project.repoUser
+                        password project.repoPassword
+                    }
+                }
+            }
+            publications {
+                maven(MavenPublication) {
+                    from components.java
+                    versionMapping {
+                        usage('java-api') {
+                            fromResolutionOf('runtimeClasspath')
+                        }
+                        usage('java-runtime') {
+                            fromResolutionOf('runtimeClasspath')
+                        }
+                    }
+                    groupId group
+                    artifactId project.name
+                    version version
+                }
+            }
+        }
+        // 의존성 오류 방지
+        publishMavenPublicationToMavenRepository.dependsOn(jar)
+    }
 }
